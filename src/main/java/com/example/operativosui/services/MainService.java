@@ -183,20 +183,6 @@ public class MainService extends Service<Void> {
         }
     }
 
-/*    private void addToUIList(){
-        createdBox = new VBox();
-
-        for (Process process : processCreatedList) {
-            String pid = "" + process.getPid();
-            Label label = new Label(pid);
-            createdBox.getChildren().add(label);
-        }
-
-        createdBox.getChildren().addAll();
-        created.setContent(null);
-        created.setContent(createdBox);
-    }
-*/
 
     public void addProcess(int index) {
         this.getResourcesPerProcess();
@@ -211,7 +197,7 @@ public class MainService extends Service<Void> {
 
 
     private Process createProcess() {
-        return new Process(this.resourcesPerProcess, RandomUtil.randomNumber(totalTime * 100, totalTime * 20) );
+        return new Process(this.resourcesPerProcess, RandomUtil.randomNumber(totalTime * 10, totalTime * 2) );
     }
 
     private void getResourcesPerProcess() {

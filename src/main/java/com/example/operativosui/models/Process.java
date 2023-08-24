@@ -6,17 +6,18 @@ import com.example.operativosui.utils.RandomUtil;
 public class Process {
     private int pid;
     private static int pidCounter = 0;
-
     private String name;
     private double assignedResources;
-    private int executionTime;
+    private long executionTime;
+    private long remainingTime;
     private volatile Status status;
 
-    public Process(double assignedResources, int executionTime) {
+    public Process(double assignedResources, long executionTime) {
         this.pid = ++pidCounter;
         this.name = RandomUtil.generateRandomName();
         this.assignedResources = assignedResources;
         this.executionTime = executionTime;
+        this.remainingTime = executionTime;
         this.setStatus(Status.CREATED);
     }
 
@@ -37,6 +38,13 @@ public class Process {
         this.setStatus(Status.STOPPED);
     }
 
+    public long getRemainingTime() {
+        return remainingTime;
+    }
+
+    public void setRemainingTime(long elapsedTime) {
+        this.remainingTime -= elapsedTime;
+    }
 
     public int getPid() {
         return pid;
@@ -54,11 +62,11 @@ public class Process {
         return assignedResources;
     }
 
-    public int getExecutionTime() {
+    public long getExecutionTime() {
         return executionTime;
     }
 
-    public void setExecutionTime(int executionTime) {
+    public void setExecutionTime(long executionTime) {
         this.executionTime = executionTime;
     }
 

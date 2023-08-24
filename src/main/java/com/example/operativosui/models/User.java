@@ -24,6 +24,8 @@ public class User {
     private List<Process> processStoppedList;
     private TitledPane[] titledPane;
 
+    private long actualTime;
+
     public User() {
         this.titledPane = new TitledPane[5];
         this.processHistory = new ArrayList<>();
@@ -84,6 +86,7 @@ public class User {
         List<Process> completedProcess = new ArrayList<>();
         List<Process> stoppedProcess = new ArrayList<>();
         for (Process process : processes) {
+            process.setRemainingTime(actualTime);
             if(process.getExecutionTime() < totalTime) {
                 completedProcess.add(process);
             }else {
@@ -106,7 +109,7 @@ public class User {
         VBox content = new VBox();
         for (Process process : processList) {
             process.setStatus(status);
-            Label label = new Label(process.getName());
+            Label label = new Label(process.getPid() + " : " + process.getName() + " | " + (process.getRemainingTime() / 1000) + " seg ");
             content.getChildren().add(label);
         }
         getTitledPane()[index].setText(getTitledPane()[index].getText().split("/")[0] + "/Procesos: " + processList.size());
@@ -138,6 +141,7 @@ public class User {
 
     public void setTotalTime(long totalTime) {
         this.totalTime += totalTime;
+        this.actualTime = totalTime;
     }
 
     public List<Process> getProcessHistory() {
