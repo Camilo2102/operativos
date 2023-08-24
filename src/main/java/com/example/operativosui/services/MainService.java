@@ -11,6 +11,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 public class MainService extends Service<Void> {
 
-    private HBox userBox;
+    private VBox userBox;
     private User[] users;
     private final List<Process> processCreatedList;
     private List<Process> processReadyList;
@@ -33,9 +34,9 @@ public class MainService extends Service<Void> {
     private ExecutorService userScheduler;
     private final ScheduledExecutorService processGeneratorScheduler;
 
-    public MainService(HBox userBox, double userAmount) {
+    public MainService(VBox userBox, double userAmount, double totalTime) {
         this.userBox = userBox;
-        this.totalTime = 10000;
+        this.totalTime = (int) (totalTime * 1000);
         this.processCreatedList = new ArrayList<>();
         this.processReadyList = new ArrayList<>();
         this.processExecutedList = new ArrayList<>();
@@ -49,48 +50,50 @@ public class MainService extends Service<Void> {
     private void generateUsersWindows(int userAmount) {
         Status[] statuses = Status.values();
         this.users = new User[userAmount];
+        this.userBox.getChildren().clear();
 
         for (int i = 0; i < userAmount; i++) {
             users[i] = new User();
             HBox processBox = new HBox();
             TitledPane titledPane = new TitledPane();
             HBox.setHgrow(titledPane, Priority.ALWAYS);
+            VBox.setVgrow(titledPane, Priority.ALWAYS);
+            titledPane.setPrefWidth(1920);
+            titledPane.setPrefHeight(1080);
 
-            for (int j = 0; j < 4; j++) {
+            for (int j = 0; j < statuses.length; j++) {
                 ScrollPane scrollPane = new ScrollPane();
                 TitledPane subTittlePane = new TitledPane("" + statuses[j], scrollPane);
-                users[i].setScrollPane(j, scrollPane);
+                subTittlePane.setPrefWidth(1920);
+                subTittlePane.setPrefHeight(1080);
+                users[i].setTitledPane(j, subTittlePane);
                 processBox.getChildren().add(subTittlePane);
             }
 
             titledPane.setContent(processBox);
-            titledPane.setText("Usuario " + (i + 1));
+            double timeInitial = (double) (totalTime / userAmount) / 1000;
+            titledPane.setText("Usuario: " + (i + 1) + " / Tiempo: " + timeInitial + " seg ");
             this.userBox.getChildren().add(titledPane);
         }
     }
 
     private void processInitialize() {
-        int totalProcess = getTotalProcess();
-
         for (int i = 0; i < users.length; i++) {
+            double actualTime = getActualTime(i);
+
             int finalI = i;
-            double timeForPart = ((double) (totalTime / users.length) / 4);
 
             Runnable userProcessRun = () -> {
                 try {
                     long start = System.currentTimeMillis();
-                    Thread.sleep((long) timeForPart);
                     Platform.runLater(() -> {
                         setExecutedForReadyProcess(finalI);
                     });
-                    Thread.sleep((long) timeForPart);
+                    Thread.sleep((long) actualTime / 2);
                     Platform.runLater(() -> {
                         setReadyForProcessCreated(finalI);
                     });
-
-                    Thread.sleep((long) timeForPart);
-
-                    Thread.sleep((long) timeForPart);
+                    Thread.sleep((long) (actualTime / 2 ));
                     long end = System.currentTimeMillis();
                     users[finalI].setTotalTime(end - start);
 
@@ -109,11 +112,29 @@ public class MainService extends Service<Void> {
 
     }
 
+    private double getActualTime(int i) {
+        TitledPane userPane = (TitledPane) this.userBox.getChildren().get(i);
+
+        int totalProcess = getTotalProcess();
+
+        double actualTime;
+
+        if(totalProcess > 0){
+            actualTime = (((double) totalTime / totalProcess) * (users[i].getProcessReadyList().size() + users[i].getProcessExecutedList().size()))/1000;
+        } else {
+            actualTime = (double) (totalTime / users.length) / 1000;
+        }
+
+        userPane.setText("Usuario: " + (i + 1) + " / Tiempo: " + actualTime + " seg ");
+        return actualTime * 1000;
+    }
+
 
     private int getTotalProcess(){
         int count = 0;
         for (User user : users) {
             count += user.getProcessReadyList().size();
+            count += user.getProcessExecutedList().size();
         }
         return count;
     }
@@ -123,7 +144,7 @@ public class MainService extends Service<Void> {
             Platform.runLater(this::generateNewProcess);
         };
 
-        processGeneratorScheduler.scheduleAtFixedRate(generateProcessTask, 0, 2, TimeUnit.SECONDS);
+        processGeneratorScheduler.scheduleAtFixedRate(generateProcessTask, 0, (totalTime / 1000), TimeUnit.SECONDS);
     }
 
     @Override
@@ -137,7 +158,7 @@ public class MainService extends Service<Void> {
         };
     }
     private void setReadyForProcessCreated(int userIndex) {
-                users[userIndex].setFromCreatedToReady();
+        users[userIndex].setFromCreatedToReady();
     }
 
     private void setExecutedForReadyProcess(int userIndex){
@@ -157,6 +178,8 @@ public class MainService extends Service<Void> {
         if (true) {
             int index = RandomUtil.randomNumber(users.length) - 1;
             this.addProcess(index);
+        } else {
+            processInitialize();
         }
     }
 
@@ -188,7 +211,7 @@ public class MainService extends Service<Void> {
 
 
     private Process createProcess() {
-        return new Process(this.resourcesPerProcess, RandomUtil.randomNumber(100000));
+        return new Process(this.resourcesPerProcess, RandomUtil.randomNumber(totalTime * 100, totalTime * 20) );
     }
 
     private void getResourcesPerProcess() {

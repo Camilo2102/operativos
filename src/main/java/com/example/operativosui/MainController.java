@@ -7,6 +7,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
@@ -15,17 +16,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 
-public class MainController{
+public class MainController {
 
     @FXML
-    private HBox userContainer;
+    private VBox userContainer;
 
     @FXML
-    private Slider userAmount;
+    private TextField userAmount;
 
+    @FXML
+    private TextField timeAmount;
 
     @FXML
     protected void startSimulation() {
-        new MainService(userContainer, userAmount.getValue()).start();
+        new MainService(userContainer, Double.parseDouble(userAmount.getText()), Double.parseDouble(timeAmount.getText()) ).start();
     }
 }

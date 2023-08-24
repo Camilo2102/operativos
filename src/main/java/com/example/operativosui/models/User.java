@@ -1,8 +1,10 @@
 package com.example.operativosui.models;
 
 import com.example.operativosui.enums.Status;
+import com.example.operativosui.utils.RandomUtil;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TitledPane;
 import javafx.scene.layout.VBox;
 
 import java.util.ArrayList;
@@ -12,7 +14,6 @@ import java.util.Map;
 
 public class User {
     private String name;
-
     private long executionTime;
     private long totalTime;
     private List<Process> processHistory;
@@ -20,15 +21,17 @@ public class User {
     private List<Process> processReadyList;
     private List<Process> processExecutedList;
     private List<Process> processEndedList;
-    private ScrollPane[] scrollPane;
+    private List<Process> processStoppedList;
+    private TitledPane[] titledPane;
 
     public User() {
-        this.scrollPane = new ScrollPane[4];
+        this.titledPane = new TitledPane[5];
         this.processHistory = new ArrayList<>();
         this.processCreatedList = new ArrayList<>();
         this.processReadyList = new ArrayList<>();
         this.processExecutedList = new ArrayList<>();
         this.processEndedList = new ArrayList<>();
+        this.processStoppedList = new ArrayList<>();
     }
 
     public void addToCreatedList(Process createdProcess) {
@@ -44,8 +47,20 @@ public class User {
     }
 
     public void setFromReadyToExecuted(){
+        List<Process> tempStoppedList = new ArrayList<>();
+        for (Process process : this.processStoppedList) {
+            boolean resume = RandomUtil.randomNumber(5) == 1;
+            if(resume){
+                this.processReadyList.add(process);
+            } else {
+                tempStoppedList.add(process);
+            }
+        }
+
+        this.processStoppedList = tempStoppedList;
         this.processExecutedList.addAll(this.processReadyList);
         this.processReadyList = new ArrayList<>();
+        addProcessToPane(4, this.processStoppedList, Status.STOPPED);
         addProcessToPane(2, this.processExecutedList, Status.EXECUTED);
         addProcessToPane(1, this.processReadyList, Status.READY);
     }
@@ -55,7 +70,9 @@ public class User {
         Map<String, List<Process>> validProcess = validateExecutedProcess(processExecutedList);
         this.processReadyList = new ArrayList<>(validProcess.get("pending"));
         this.processEndedList.addAll(validProcess.get("complete"));
+        this.processStoppedList.addAll(validProcess.get("stopped"));
         this.processExecutedList = new ArrayList<>();
+        addProcessToPane(4, this.processStoppedList, Status.STOPPED);
         addProcessToPane(3, this.processEndedList, Status.ENDED);
         addProcessToPane(2, this.processExecutedList, Status.EXECUTED);
         addProcessToPane(1, this.processReadyList, Status.READY);
@@ -65,13 +82,20 @@ public class User {
         Map<String, List<Process>> filteredProcess = new HashMap<>();
         List<Process> pendingProcess = new ArrayList<>();
         List<Process> completedProcess = new ArrayList<>();
+        List<Process> stoppedProcess = new ArrayList<>();
         for (Process process : processes) {
             if(process.getExecutionTime() < totalTime) {
                 completedProcess.add(process);
             }else {
-                pendingProcess.add(process);
+                boolean stop = RandomUtil.randomNumber(20) == 1;
+                if(stop){
+                    stoppedProcess.add(process);
+                } else {
+                    pendingProcess.add(process);
+                }
             }
         }
+        filteredProcess.put("stopped", stoppedProcess);
         filteredProcess.put("pending", pendingProcess);
         filteredProcess.put("complete", completedProcess);
         return filteredProcess;
@@ -82,10 +106,13 @@ public class User {
         VBox content = new VBox();
         for (Process process : processList) {
             process.setStatus(status);
-            Label label = new Label("Proceso: " + process.getPid());
+            Label label = new Label(process.getName());
             content.getChildren().add(label);
         }
-        getScrollPane()[index].setContent(content);
+        getTitledPane()[index].setText(getTitledPane()[index].getText().split("/")[0] + "/Procesos: " + processList.size());
+        ScrollPane pane = (ScrollPane) getTitledPane()[index].getContent();
+        pane.setContent(content);
+        getTitledPane()[index].setContent(pane);
     }
 
 
@@ -93,12 +120,12 @@ public class User {
         return processReadyList;
     }
 
-    public ScrollPane[] getScrollPane() {
-        return scrollPane;
+    public TitledPane[] getTitledPane() {
+        return titledPane;
     }
 
-    public void setScrollPane(int index, ScrollPane pane) {
-        this.scrollPane[index] = pane;
+    public void setTitledPane(int index, TitledPane pane) {
+        this.titledPane[index] = pane;
     }
 
     public String getName() {
